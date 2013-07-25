@@ -16,13 +16,21 @@ include_recipe "postgresql::server"
 include_recipe "database::postgresql"
 
 #TODO Chef 11 compat?
-node.set['postgresql']['pg_hba'] = [
-  {:type => 'local', :db => 'all', :user => 'postgres', :addr => nil, :method => 'ident'},
-  {:type => 'local', :db => 'all', :user => 'all', :addr => nil, :method => 'md5'},
-  {:type => 'host', :db => 'all', :user => 'all', :addr => '127.0.0.1/32', :method => 'md5'},
-  {:type => 'host', :db => 'all', :user => 'all', :addr => '::1/128', :method => 'md5'}
+entries = [
+  {'type' => 'local', 'db' => 'all', 'user' => 'postgres', 'addr' => nil,            'method' => 'ident'},
+  {'type' => 'local', 'db' => 'all', 'user' => 'all',      'addr' => nil,            'method' => 'md5'},
+  {'type' => 'host',  'db' => 'all', 'user' => 'all',      'addr' => '127.0.0.1/32', 'method' => 'md5'},
+  {'type' => 'host',  'db' => 'all', 'user' => 'all',      'addr' => '::1/128',      'method' => 'md5'}
 ]
 
+if node['postgresql']['pg_hba'].any?
+  node['postgresql']['pg_hba'].each do |entry|
+    entries << entry
+  end
+end
+hba_entries = entries.uniq
+
+node.set['postgresql']['pg_hba'] = hba_entries
 
 postgresql_connection_info = {
   :host => "localhost",
